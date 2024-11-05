@@ -1,16 +1,42 @@
-load_dotenv()
+\documentclass[12pt]{article}
+\usepackage[utf8]{inputenc}
 
-MARKETS = "SG"
-ifCompare = False
-FIELD = "srr"
-prompt_dict: dict = {}
-COMPANIES = get_company_list(MARKETS)
-url = os.getenv("ASK_URL")
-# url = "http://localhost:8000/wsit-innovation-generativeAI-pa-chatgpt/v2/ask-question"
-headers = {
-    'Content-Type': 'application/json',
-    'Cookie': os.getenv("ASK_COOKIE")
+\usepackage[margin=1in]{geometry}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes,arrows, matrix}
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+
+\usepackage{minted}
+\usepackage{pythonhighlight}
+\usepackage{listings}
+
+\usepackage{pifont}
+\newcommand{\cmark}{\ding{51}}%
+\newcommand{\xmark}{\ding{55}}%
+
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{soul}  
+\usepackage{xkvltxp}
+\usepackage{fixme}
+\fxsetup{
+    status=draft,
+    author=,
+    layout=inline,
+    theme=color
 }
+\definecolor{fxnote}{rgb}{1,0,0}
+\colorlet{fxnotebg}{yellow}
 
-df = pd.DataFrame(columns=['company', 'stitt_output', 'api_return', 'response_time'])
-https://urldefense.com/v3/__http://meet.google.com/iir-fafh-voc__;!!LSAcJDlP!2ZEznN50F07Yw8xI_E64xeI5eEAjyBSbXtXaZqRT2VGFJybzJT_td_WtYaymbafRjX-LO4GhtDG21ABBgGP7S-Q$
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{assumption}{Assumption}
+\newtheorem{question}[definition]{Question}
+
+\def\assumptionautorefname{Assumption}
