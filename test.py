@@ -1,124 +1,89 @@
-def can_generate_sequence(sequence, K):
-    element_counts = {}
-    first_occurrences = {}
-    last_occurrences = {}
-    unique_elements = set(sequence)
+def toggle_coordinate_value(canvas, coord):
+    x, y = coord
+    # Toggle the value at the given coordinate
+    canvas[x][y] = 1 - canvas[x][y]
 
-    # Single pass to gather necessary information
-    for index, element in enumerate(sequence):
-        element_counts[element] = element_counts.get(element, 0) + 1
-        if element not in first_occurrences:
-            first_occurrences[element] = index
-        last_occurrences[element] = index
+def get_reflected_coordinates(coord, N):
+    x, y = coord
+    return [(x, y), (x, N - y - 1), (N - x - 1, y), (N - x - 1, N - y - 1)]
 
-    unique_count = len(unique_elements)
+def get_group_value(canvas, coord, N):
+    values = []
+    reflected_coords = get_reflected_coordinates(coord, N)
+    for r_coord in reflected_coords:
+        x, y = r_coord
+        value = canvas[x][y]
+        values.append(value)
+    occur_one = sum(values)
+    occur_zero = 4 - occur_one
+    return min(occur_one, occur_zero)
 
-    if unique_count > K:
-        return False
+def generate_canvas(grid, N):
+    canvas = [[0] * N for _ in range(N)]
+    for i in range(N):
+        for j in range(N):
+            if grid[i][j] == '#':
+                canvas[i][j] = 1
+    return canvas
 
-    if K == 1:
-        return unique_count == 1
-
-    if K == 2:
-        if unique_count == 1:
-            return True
-        elif unique_count == 2:
-            # Using precomputed counts and occurrences to check conditions
-            unique_elements = list(unique_elements)
-            element1, element2 = unique_elements[0], unique_elements[1]
-            if element_counts[element1] == first_occurrences[element2] or element_counts[element2] == first_occurrences[element1]:
-                return True
-
-            smallest_unit = find_smallest_repeat_unit(sequence, element_counts)
-            if smallest_unit and smallest_unit != sequence:
-                return is_unit_repeating(sequence, smallest_unit)
-        return False
-
-    if K == 3:
-        if unique_count == 1:
-            return True
-        elif unique_count == 2:
-            if check_dividing_strategy(sequence, 1, element_counts):
-                return True
-        elif unique_count == 3:
-            if check_three_distinct_pattern(sequence, element_counts):
-                return True
-
-            smallest_unit = find_smallest_repeat_unit(sequence, element_counts)
-            if smallest_unit and smallest_unit != sequence:
-                return is_unit_repeating(sequence, smallest_unit)
-
-            if check_three_number_dividing_strategy(sequence, element_counts):
-                return True
-
-    return False
-
-def check_dividing_strategy(sequence, K_target, element_counts):
-    for i in range(1, len(sequence)):
-        part_a, part_b = sequence[:i], sequence[i:]
-        if can_generate_sequence(part_a, K_target) or can_generate_sequence(part_b, K_target):
-            return True
-    return False
-
-def check_three_number_dividing_strategy(sequence, element_counts):
-    for i in range(1, len(sequence)):
-        part_a, part_b = sequence[:i], sequence[i:]
-        conditions_met = ((can_generate_sequence(part_a, 1) and can_generate_sequence(part_b, 2)) or
-                          (can_generate_sequence(part_a, 2) and can_generate_sequence(part_b, 1)))
-        if conditions_met:
-            return True
-    return False
-
-def check_three_distinct_pattern(sequence, element_counts):
-    if len(set(sequence)) != 3:
-        return False
-
-    first, second, third = sequence[0], None, None
-    found_second, found_third = False, False
-
-    for num in sequence[1:]:
-        if not found_second:
-            if num != first:
-                second = num
-                found_second = True
-        elif not found_third:
-            if num != first and num != second:
-                third = num
-                found_third = True
-                break
-
-    if not found_third:
-        return False
-
-    first_count = element_counts[first]
-    second_count = element_counts[second]
-    third_count = element_counts[third]
-
-    expected_pattern = [first] * first_count + [second] * second_count + [third] * third_count
-    return sequence == expected_pattern
-
-def find_smallest_repeat_unit(sequence, element_counts):
-    for unit_length in range(1, len(sequence) // 2 + 1):
-        unit = sequence[:unit_length]
-        if is_unit_repeating(sequence, unit):
-            return unit
-    return None
-
-def is_unit_repeating(sequence, unit):
-    unit_length = len(unit)
-    for i in range(0, len(sequence), unit_length):
-        if sequence[i:i+unit_length] != unit:
-            return False
-    return True
+def toggle_and_update_group_value(canvas, coord, N, groups):
+    toggle_coordinate_value(canvas, coord)
+    reflected_coords = tuple(sorted(get_reflected_coordinates(coord, N)))
+    group_value = get_group_value(canvas, coord, N)
+    # Update the group's value and the total group value
+    old_value = groups.get(reflected_coords)
+    groups[reflected_coords] = group_value
+    return group_value - old_value
 
 if __name__ == "__main__":
-    T = int(input())
+    N, U = map(int, input().split())
+    grid = [input() for _ in range(N)]
+    canvas = generate_canvas(grid, N)
+
+    groups = {}
+    total_group_value = 0
+    for i in range(N):
+        for j in range(N):
+            group_id = tuple(sorted(get_reflected_coordinates((i, j), N)))
+            if group_id not in groups:
+                group_value = get_group_value(canvas, (i, j), N)
+                groups[group_id] = group_value
+                total_group_value += group_value
+
+    print(total_group_value)  # Initial sum of group values
+
+    for _ in range(U):
+        x, y = map(int, input().split())
+        coord = (x - 1, y - 1)  # Adjust for 0-indexing
+        change_in_value = toggle_and_update_group_value(canvas, coord, N, groups)
+        total_group_value += change_in_value
+        print(total_group_value)  # Updated sum of group values after each update
+
+
+def max_occurrences_or_missing(numbers, max_value):
+    # Count occurrences of each number in the input list
+    occurrence_counts = {}
+    for num in numbers:
+        occurrence_counts[num] = occurrence_counts.get(num, 0) + 1
+
+    # Calculate the cumulative count of missing numbers
+    missing_counts = [0] * (max_value + 1)
+    for i in range(1, max_value + 1):
+        missing_counts[i] = missing_counts[i - 1] + (0 if i in occurrence_counts else 1)
+
+    # Determine the max between occurrences and missing counts for each number
     results = []
-    for _ in range(T):
-        N, K =map(int, input().split())
-        sequence = list(map(int, input().split()))
-        # Instead of recomputing here, use the counts from within the main function
-        result = can_generate_sequence(sequence, K)
-        results.append("YES" if result else "NO")
+    for x in range(max_value + 1):
+        occurrences_of_x = occurrence_counts.get(x, 0)
+        missing_up_to_x = missing_counts[x - 1] if x > 0 else 0
+        results.append(max(occurrences_of_x, missing_up_to_x))
+
+    return results
+
+
+if __name__ == "__main__":
+    N = int(input().strip())
+    num_list = list(map(int, input().strip().split()))
+    results = max_occurrences_or_missing(num_list, N)
     for result in results:
         print(result)
