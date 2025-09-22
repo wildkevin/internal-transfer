@@ -22,8 +22,14 @@ Notes on terms (plain language)
   - Data type: tabular only (Data Mirror limitation).
   - Engine: Data Mirror handles synthetic data generation with BigQuery connectors.
   - Platform: Synthetic Data Sandbox provides governance, job orchestration, quality validation, endorsement workflows, and controlled distribution to a centralized BigQuery dev environment.
-  - Orchestration: Jenkins or Google Cloud Composer.
+  - Orchestration: Jenkins or Google Cloud Composer (managed Apache Airflow).
   - Usage modes: self‑service (users run their own jobs) and managed (admins schedule runs for teams).
+
+**Initial POC Plan (Data Lens Approach)**
+- Starting point: onboard four core financial data assets as a "data lens" with fixed sizing for predictable, consistent synthetic data generation.
+- Assets: party (customers/organizations), account (bank accounts/cards), product (financial products/services), payment (transactions/transfers).
+- Fixed scale: 100,000 synthetic records per asset (400,000 total records per run) to provide realistic volume while maintaining manageable cost and processing time.
+- Relationship focus: test Data Mirror's ability to preserve primary key/foreign key relationships across the customer journey (party → account → product → payment).
 
 ---
 
@@ -196,6 +202,61 @@ shares:
   - group:data-science
 ```
 
+POC Data Lens job config (initial implementation)
+```yaml
+domain: financial_services
+data_lens: poc_financial
+driver_table: source.party
+row_policy:
+  fixed_records_per_asset: 100000
+  tables:
+    - table: source.party
+      mode: FIXED_COUNT
+      value: 100000
+      asset_type: dimension
+      primary_key: party_id
+      description: "Customers, organizations, individuals"
+    - table: source.account
+      mode: FIXED_COUNT
+      value: 100000
+      asset_type: dimension
+      primary_key: account_id
+      foreign_keys: [party_id]
+      description: "Bank accounts, cards, loans"
+    - table: source.product
+      mode: FIXED_COUNT
+      value: 100000
+      asset_type: dimension
+      primary_key: product_id
+      description: "Financial products, services"
+    - table: source.payment
+      mode: FIXED_COUNT
+      value: 100000
+      asset_type: fact
+      primary_key: payment_id
+      foreign_keys: [account_id, product_id, party_id]
+      description: "Transactions, transfers, payments"
+relationships:
+  - parent: party
+    child: account
+    cardinality: "1:N"
+  - parent: product
+    child: payment
+    cardinality: "1:N"
+  - parent: account
+    child: payment
+    cardinality: "1:N"
+gates:
+  ks_pvalue_threshold: 0.05
+  fk_coverage_threshold: 0.999  # Stricter for financial data
+quotas:
+  max_total_rows_per_run: 400000  # 4 assets × 100k each
+shares:
+  - group:data-engineering
+  - group:financial-analytics
+  - group:model-development
+```
+
 ### End-to-End Job Flow
 
 ```mermaid
@@ -254,6 +315,7 @@ How to specify
 - FIXED_COUNT (N): explicit number of rows.
 - PARTITION_WINDOW: rows within a time window (for example, last 90 days), optionally with SCALE_FACTOR.
 - DERIVED_FROM_DRIVER (for related tables): size child tables using real parent→child distributions from the chosen driver table to preserve FK coverage and realistic join cardinalities.
+- DATA_LENS (POC approach): fixed record count per asset type to create consistent, predictable "views" of synthetic data for proof‑of‑concept validation.
 
 Guardrails
 - Per‑table min/max rows and maximum scale factor.
@@ -266,6 +328,7 @@ Practical guidance
 - Model development: the larger of 10,000 rows or 10× the number of features, and ≥ 50–100 rows per key category.
 - Performance testing: 1–5× source or a fixed large number to mimic peak load.
 - Stable statistics: aim for ≥ 1,000 effective samples per important column or group.
+- POC validation (data lens): 100,000 records per core asset provides sufficient volume to test relationship preservation, quality gates, and end‑user scenarios while keeping processing time and costs predictable.
 
 ---
 
@@ -302,6 +365,7 @@ G. Identical linkage (relationships preserved)
 - Foreign Key coverage: every child points to a valid parent; orphan rate measured.
 - Join cardinality shape: distribution of children per parent remains close to source.
 - Example gates: FK coverage ≥ 99%; orphans = 0 in strict mode; acceptable drift for parent→child counts.
+- POC financial data: stricter FK coverage ≥ 99.9% to ensure realistic customer journey flows (party → account → payment) for compliance and analytical accuracy.
 
 Endorsement
 - A Data Domain Admin reviews the DQ report. If acceptable, "endorsed = true" is recorded with approver, timestamp, and notes.
