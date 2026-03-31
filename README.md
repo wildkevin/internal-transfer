@@ -1,102 +1,180 @@
-# A Deep Research Report on Potential Customers for Silver FX Hedging Products in China
+# Architecture Decision Record: FAA Multi-Agent Deployment Strategy
 
-This report provides a comprehensive analysis of potential customers for silver Foreign Exchange (FX) hedging products within the People's Republic of China. The target audience comprises multinational manufacturers and major domestic producers that physically consume silver as a critical input, import it into the country, and possess significant export operations, thereby creating a direct need to manage both commodity price risk and currency exposure. The analysis is based exclusively on the provided context blocks, focusing on companies in the solar photovoltaic (PV), automotive, medical devices, and electronics industries. The report details a methodology for identifying these firms, profiles those with verifiable data, assesses their specific risk exposures, and concludes with a prioritized list of sales leads and strategic recommendations.
+**ADR-001** | Date: 2026-03-31 | Status: **Accepted**
 
-## Methodology for Identifying and Screening Chinese Silver Consumers
+-----
 
-The identification of potential customers for silver hedging products required a multi-stage screening process designed to filter a broad field of industrial users down to a targeted list of companies with quantifiable and material risk profiles. This methodology ensured that only entities meeting the stringent criteria of physical consumption, direct USD-denominated procurement, and significant export activity were considered. The process began by establishing a baseline of key industry players from which to work.
+## Context
 
-The initial stage involved sourcing lists of prominent companies from specialized market reports focused on sectors heavily reliant on silver. These sources included analyses of the global and Chinese markets for photovoltaic (PV) silver paste [[5,6]], silver powder used in solar cell pastes [[2]], and high-performance electronic materials [[6]]. These reports provide a foundational list of over 20 companies operating across the solar, electronics, automotive, and semiconductor industries in China. This approach was chosen because these sectors are known to be primary consumers of silver in its various forms, including powder, wire, and raw material [[1]].
+The FAA (Financial Asset Analysis) system consists of three specialized sub-agents and one orchestration workflow:
 
-In the second stage, each company from the initial list was subjected to a rigorous qualification checklist. The primary criteria were: **Physical Consumption**, **Import Activity**, and **Material Consumption**. Physical consumption was defined as the use of silver directly in the manufacturing of finished goods, ruling out trading or intermediary activities. While the provided sources do not offer explicit trade records, this criterion was assessed by confirming the company's role as a manufacturer or producer of goods like solar cell paste, printed circuit boards, or catalytic converters [[5,6]]. Import activity was confirmed when available through explicit mentions in the source texts, such as the mention of Ningbo Jingxin Electronic Materials Co. Ltd. being located in Ningbo, China, a major port city indicative of import capability [[2]]. The "material consumption" threshold was set to identify companies whose silver usage creates a tangible financial risk, though an absolute tonnage figure was not specified. Instead, this was assessed qualitatively based on a company's market position, production scale, and regional concentration in major Chinese industrial hubs like the Yangtze River Delta and Pearl River Delta, which house a dense cluster of electronics and solar manufacturing facilities [[3,5]].
+- `agents/causality` — causal factor analysis
+- `agents/materiality` — materiality assessment
+- `agents/market_trends` — market trend analysis
+- `workflow/` — NOVA orchestrator that coordinates the three agents
 
-The third stage focused on refining the geographical scope. Production locations were cross-referenced with the user-specified regions of interest: the Yangtze River Delta (YRD) and Pearl River Delta (PRD). The YRD, encompassing Shanghai and provinces like Jiangsu and Zhejiang, is a recognized hub for high-tech manufacturing and electronics [[5]]. The PRD, centered on Guangdong province, is a powerhouse for electronics assembly and export-oriented manufacturing [[2]]. Companies without verifiable production facilities within these two economic zones were deprioritized, aligning with the user's directive to focus on specific geographic clusters in Mainland China.
+The team debated three structural options for how to organize and deploy these components. A key long-term goal is that each agent should eventually be **autonomous and callable independently**, potentially via A2A (Agent-to-Agent) protocol, outside of the FAA workflow.
 
-Finally, the fourth stage involved profiling the qualified companies against a comprehensive set of data points. For each company, information was gathered on business description, annual consumption, import volumes, production locations, export markets, and financial scale where available. Where precise quantitative data was unavailable, the research effort focused on estimating the size of the risk, particularly the USD/CNY FX exposure arising from imports priced in USD. This estimation was derived from analyzing global price trends, import volume fluctuations in China, and the growth projections for silver-intensive industries like solar PV. By combining these four stages—sourcing, qualification, geofencing, and profiling—the methodology successfully identified a curated list of companies with clear and compelling needs for integrated silver commodity and FX hedging solutions.
+-----
 
-## Profiled Companies: Top Leads for Silver Commodity and FX Hedging
+## Options Considered
 
-Based on the established methodology, this section presents detailed profiles of specific Chinese companies that meet the core criteria for requiring silver hedging products. Each profile synthesizes publicly available information to quantify the nature of their silver consumption, their import and export activities, and the resulting financial risks. The companies listed below have been identified as having a strong probability of needing to hedge against both silver price volatility and USD/CNY currency fluctuations. The table below summarizes the key findings for the top potential clients.
+### Option 1 — 1 Repo, 1 Webapp, Multiple Routes ✅ *Chosen*
 
-| Company Name | Business Description & Reason for Silver Use | Industry Sector | Estimated Annual Consumption | Form of Silver Imports | Key Production Locations | Export Markets | Sales Qualification Score |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **CSIC Huanggang Precious Metals Co., Ltd.** | Manufacturer of precious metals and related materials; likely uses silver in alloys or other composite products. | Electronics / Industrial | Information not available in provided sources. | Information not available in provided sources. | Location not specified. | Information not available in provided sources. | Not Available |
-| **Ningbo Jingxin Electronic Materials Co. Ltd.** | Producer of electronic materials, specifically mentioned as a key supplier in China’s solar PV supply chain. | Solar PV | Information not available in provided sources. | Silver Powder | Ningbo, Zhejiang (Yangtze River Delta) | Global solar panel market | High (Estimated >10 tonnes/year) |
-| **Guangdong Lingguang New Material Co., Ltd.** | Manufacturer of new materials, specifically noted as a key player in the silver powder for solar cell paste market. | Solar PV | Information not available in provided sources. | Silver Powder | Guangdong (Pearl River Delta) | Global solar panel market | High (Estimated >10 tonnes/year) |
-| **Changzhou Fusion New Material Co., Ltd.** | Developer and manufacturer of new materials, specifically identified as a top player in the photovoltaic silver paste market. | Solar PV | Information not available in provided sources. | Silver Paste | Changzhou, Jiangsu (Yangtze River Delta) | Global solar panel market | High (Estimated >10 tonnes/year) |
-| **Good-Ark Technology Co., Ltd.** | Manufacturer of electronic materials, including silver paste for photovoltaic applications. | Solar PV | Information not available in provided sources. | Silver Paste | Location not specified. | Global solar panel market | High (Estimated >10 tonnes/year) |
-| **Heraeus Holding GmbH** | German-based multinational specializing in materials solutions; operates a significant presence in China. | Electronics / Automotive | Information not available in provided sources. | Information not available in provided sources. | Information not available in provided sources. | Global (China exports to EU, US, etc.) | Medium-High (High revenue base implies high exposure) |
-| **DuPont de Nemours, Inc.** | US-based multinational corporation active in multiple sectors including electronics and automotive components. | Automotive / Electronics | Information not available in provided sources. | Information not available in provided sources. | Information not available in provided sources. | Global (China exports to North America, Europe, etc.) | Medium-High (High revenue base implies high exposure) |
+All agents and the workflow live in a single repository and are served by a single web application, each agent exposed via a dedicated API route.
 
-*Note: For most companies, specific quantitative data on consumption, imports, or financial scale is not available in the provided sources. Therefore, estimates and conclusions are based on qualitative analysis of their market position and operational characteristics.*
+```
+src/
+├── agents/
+│   ├── causality/        → /agents/causality
+│   ├── materiality/      → /agents/materiality
+│   └── market_trends/    → /agents/market_trends
+└── workflow/             → /workflow
+```
 
-### Ningbo Jingxin Electronic Materials Co. Ltd.
-As a key supplier in China’s solar PV supply chain, Ningbo Jingxin Electronic Materials Co. Ltd. represents a prime candidate for hedging services [[2]]. The company's primary use of silver is in the form of powder, which is an essential component in the production of silver paste for solar cell front and rear contact grids [[2,6]]. This constitutes direct, physical consumption integral to the manufacturing process. Located in Ningbo, Zhejiang, the company is situated squarely within the Yangtze River Delta production hub, a region renowned for its advanced manufacturing capabilities [[2,5]]. Given its central role in the solar industry, which is a massive driver of silver demand in China, it is highly probable that Ningbo Jingxin engages in regular imports of silver powder priced in USD. The strong demand from the solar sector has already led to increased import activity in China, suggesting that major domestic players like Ningbo Jingxin are actively procuring silver on the international market [[4]]. Furthermore, as a supplier to the global solar panel market, the company generates substantial USD-denominated export revenue, creating a natural offsetting cash flow but also exposing it to complex FX risks [[2]]. Its estimated annual consumption is believed to be at a material level, likely exceeding 10 tonnes per year, given its status as a key domestic player in a fast-growing market [[2,3]].
+### Option 2 — 1 Repo, 4 Webapps, 4 Routes ❌ *Rejected*
 
-### Guangdong Lingguang New Material Co., Ltd.
-Guangdong Lingguang New Material Co., Ltd. is another critical entity in China's solar PV ecosystem, specifically identified as a key player in the silver powder for solar cell paste market [[2]]. Similar to Ningbo Jingxin, its business is fundamentally tied to the physical consumption of silver, which it uses to produce materials for solar cell metallization [[2,6]]. The company's location in Guangdong places it within the Pearl River Delta, a dominant force in export-oriented electronics manufacturing [[2]]. This geographic positioning strongly suggests significant export activity. The company's involvement in the Asia-Pacific dominated market for solar cell paste further underscores its connection to both regional and global supply chains [[2]]. Although specific data on its consumption volumes or import forms are not available, its prominence in the market indicates a material requirement for silver powder. The combination of its location in a major export hub and its role as a key domestic supplier to the global solar market makes Guangdong Lingguang a high-priority lead for integrated hedging solutions [[2]].
+Single codebase but deployed as four separate web applications, each with its own route.
 
-### Changzhou Fusion New Material Co., Ltd.
-Changzhou Fusion New Material Co., Ltd. is positioned as a top-tier player in the photovoltaic silver paste market, indicating a deep involvement in the manufacturing process rather than mere distribution [[5]]. Its use of silver is in the form of paste, a product created from silver powder, signifying a step further along the value chain in solar cell production [[5,6]]. The company's headquarters in Changzhou, Jiangsu, firmly places it within the Yangtze River Delta industrial corridor, a center for high-tech and advanced material manufacturing [[5]]. As a leading manufacturer of a specialized product for the solar industry, it is logical to infer that Changzhou Fusion relies on imported raw materials, including silver powder, to maintain consistent quality and supply for its customers. Like its peers, its participation in the global solar panel market necessitates managing both the price of its primary input and the currency in which it is purchased, making it a prime candidate for a comprehensive hedging strategy [[5]].
+### Option 3 — 4 Repos, 4 Webapps ⏳ *Future Target*
 
-### DuPont de Nemours, Inc. and Heraeus Holding GmbH
-While not purely Chinese entities, these multinational corporations operate significant manufacturing and commercial bases in China, making them crucial targets. Both companies are global leaders in materials science, producing a wide range of products for the electronics and automotive sectors, including silver-based materials for semiconductors, printed electronics, and automotive sensors [[6]]. Their business descriptions confirm a direct and extensive use of silver in their production processes. As large, publicly traded corporations, they possess substantial financial scale, implying that even a moderate percentage of silver consumption translates into very large absolute dollar amounts of FX exposure [[5,6]]. They are deeply embedded in China's export economy, supplying their products to global markets, including North America and Europe. This dual exposure to importing USD-priced silver and exporting to receive USD makes them ideal candidates for sophisticated hedging strategies that can manage both risks simultaneously. Their global brand recognition and market leadership suggest a higher likelihood of being receptive to institutional-grade financial products compared to smaller private enterprises.
+Fully isolated — each agent has its own repository, CI/CD pipeline, and web application.
 
-## Quantitative Analysis of Silver Demand and Financial Exposure
+-----
 
-A robust assessment of a company's suitability for hedging products requires a quantitative understanding of its silver consumption and the corresponding financial exposure generated. This analysis leverages available data on China's overall silver market dynamics to estimate the scale of risk faced by key industry players, particularly those in the solar PV sector. The provided sources indicate that total silver demand in China is projected to grow significantly, driven almost entirely by industrial consumption, especially from the burgeoning solar industry [[3]].
+## Comparison
 
-According to one study, industrial silver demand in China is forecasted to surge from 3,800 tonnes in 2022 to 7,000 tonnes by 2035, representing a compound annual growth rate (CAGR) of 4.4% [[3]]. This dramatic increase highlights the escalating importance of silver as a critical input for Chinese manufacturers. In contrast, non-industrial demand is expected to grow much more slowly, from 2,000 tonnes to 2,500 tonnes between 2022 and 2035, at a CAGR of just 1.7% [[3]]. This divergence confirms that the primary engine of silver demand in China is the country's vast manufacturing sector. The same report notes that domestic mine production and recycling are insufficient to meet this rising demand, creating a structural reliance on imports [[3]]. This dependency is evidenced by recent market activity; Chinese silver imports reached a three-year high in December and continued to be strong in April, well above the five-year monthly average of around 310 tonnes [[4]]. This influx of physical metal is necessary to replenish local inventories and support strong industrial demand, particularly from the solar sector [[4]].
+|Dimension           |Option 1|Option 2   |Option 3|
+|--------------------|--------|-----------|--------|
+|Repositories        |1       |1          |4       |
+|Web Applications    |1       |4          |4       |
+|Dev Complexity      |Low     |Medium     |High    |
+|Deploy Complexity   |Low     |**High**   |Medium  |
+|Dependency Isolation|❌       |❌          |✅       |
+|Independent Scaling |❌       |✅          |✅       |
+|A2A Ready           |❌       |Partial    |✅       |
+|QA Risk             |Low     |**High**   |Low     |
+|Timeline Risk       |Low     |Medium     |High    |
+|Version Control     |Simple  |Problematic|Clean   |
 
-The solar industry stands out as the most significant driver of this trend. The global market for high-performance silver paste, a key consumable in solar cell manufacturing, was valued at USD 2.5 billion in 2024 and is projected to expand to USD 6.0 billion by 2035, growing at a robust CAGR of 8.28% [[6]]. Within this market, the silver powder for solar cell paste segment was valued at USD 2.88 billion in 2023 [[2]]. Asia-Pacific, led by China, Japan, and India, dominates this market [[2]]. The rapid expansion of the solar industry, with advanced cell technologies like PERC, HJT, and TOPCon driving higher silver paste consumption, directly translates into a massive and growing demand for silver [[2]]. The intense competition among market players, with numerous companies vying for market share, means that price stability and predictable input costs are paramount for maintaining profitability [[2,5]].
+### Why Option 2 Was Rejected
 
-For a company like Ningbo Jingxin, which is described as a key domestic supplier to the solar PV industry, this macroeconomic picture provides a clear rationale for hedging [[2]]. If the global market for silver paste is expanding at 8.28% annually, a top-tier company like Ningbo Jingxin would logically experience similar growth rates. Using a simple back-of-the-envelope calculation, if a company holds a 1% market share in the USD 2.88 billion silver powder market, its annual turnover from this product line alone would be approximately USD 28.8 million. Even a small fraction of this value represented by silver content would constitute a material amount of physical silver to procure. With Chinese imports consistently running above the historical average, it is reasonable to conclude that such a company faces a continuous and substantial USD-denominated FX liability from its silver purchases. The combination of high import volumes, volatile silver prices, and the need to pay suppliers in USD creates a perfect storm of risk that can be effectively managed with a tailored hedging program.
+Option 2 was identified as the worst of both worlds:
 
-## Assessing Integrated Commodity and FX Risk Profiles
+- **Not truly isolated** — all apps share the same codebase, so a dependency change in one agent forces redeployment of all four apps
+- **Dependency conflicts** — shared library versions across apps in the same repo can collide
+- **QA nightmare** — regression testing must account for 4 deployment targets from 1 codebase
+- **Version control confusion** — a single commit can break multiple independently deployed apps
+- As one team member put it: *“wants to be independent but isn’t”*
 
-To effectively serve a client, it is essential to understand the interplay between their commodity price risk and foreign exchange risk. For a Chinese manufacturer importing silver priced in USD, these two risks are intrinsically linked. A hedge must therefore address both dimensions simultaneously. This section analyzes the specific risk profiles of qualified companies, breaking down their exposure to silver price fluctuations and USD/CNY currency movements, and explaining why an integrated solution is superior to treating these risks in isolation.
+### Why Option 3 Was Deferred
 
-The primary source of commodity price risk for these companies is the volatility of the global silver spot price. Silver's unique dual-use case—as both a precious metal for investment and a critical industrial commodity—makes its price sensitive to a wide range of factors, including macroeconomic shifts, inflation expectations, central bank policies, and, most importantly for this context, the performance of the technology and renewable energy sectors [[4]]. For a solar paste manufacturer like Changzhou Fusion, a sudden drop in the price of silver could reduce their cost of goods sold and marginally improve profitability. However, a sharp and unexpected rise in the price of silver would directly squeeze margins, potentially eroding years of profit and creating severe financial instability. This risk is amplified by the fact that many of these companies operate in highly competitive markets with thin margins, leaving little room for maneuver when input costs spike [[5]]. An effective commodity hedge, such as a forward contract or a call option on silver futures, would allow a company to lock in a maximum purchase price for its future requirements, providing budgetary certainty and protecting its bottom line from adverse price movements.
+Option 3 is the correct long-term architecture but introduces too much overhead at the current stage:
 
-The second, and often more immediate, risk is FX exposure. Since silver is globally priced in USD, any Chinese company that imports it is inherently long silver and short USD. This means that if the USD strengthens against the CNY, the cost of purchasing silver in yuan terms will increase, even if the USD price of silver remains unchanged. This scenario is currently prevalent. The provided context notes that Shanghai spot prices showed a premium of over 15%, which exceeded the 13% import tax, creating a direct incentive for importers and highlighting the strength of the USD relative to the CNY in the physical market [[4]]. This situation forces companies to either absorb the additional cost, reducing their profitability, or pass it on to their customers, risking a loss of competitiveness. The typical payment terms for such large-scale industrial imports often involve letters of credit or other deferred payment mechanisms, meaning the FX risk is realized at the time of payment, which may be weeks or months after the order is placed. This lag creates a significant period of uncertainty for the company's treasury department.
+- 4 separate CI/CD pipelines to configure and maintain
+- Cross-agent debugging is significantly harder
+- Package and dependency management multiplied across repos
+- Delivery timeline risk is not justified when agents are still being designed and stabilized
 
-Furthermore, many of these companies are also exporters, adding another layer of complexity. When a company like DuPont sells its products abroad, it receives payment in USD or other hard currencies. This creates a natural, albeit imperfect, hedge against its USD-denominated import payments. However, this self-hedging mechanism is fragile. The timing of imports and exports rarely align perfectly, leading to periods of net USD exposure where the company has more USD liabilities (import payments) than assets (export receipts). During these periods, a strengthening USD would negatively impact the company's net CNY cash flow. An FX hedge, such as a USD/CNY forward or swap, would allow the company to lock in an exchange rate for a future date, eliminating this uncertainty and ensuring that the cost of its silver imports can be accurately forecasted in CNY terms. An integrated product bundle, combining a commodity hedge for the silver price and an FX hedge for the currency conversion, offers a holistic solution that manages the entire end-to-end risk from procurement to payment.
+-----
 
-## Strategic Recommendations and Sales Lead Prioritization
+## Decision
 
-Based on the comprehensive analysis of market data and company profiles, this section provides strategic recommendations for targeting and engaging with potential customers. It culminates in a prioritized list of the most promising sales leads and outlines a suggested sales approach for each, enabling a focused and effective outreach campaign.
+**We adopt Option 1** for the current development and initial production phase.
 
-The primary strategic recommendation is to adopt a tiered approach to sales engagement. The most promising opportunities fall into two distinct categories: Tier 1 consists of large, well-established multinational corporations with significant scale and sophisticated treasury departments, while Tier 2 comprises strategically important, high-volume domestic manufacturers that are cornerstones of China's key industrial supply chains. Engaging with both tiers is crucial for building a diversified and resilient client portfolio.
+The monorepo structure with a single webapp is the pragmatic choice that minimizes operational risk and preserves delivery speed. However, the implementation must be designed with Option 3 as the future target state.
 
-Tier 1 prospects, such as **DuPont de Nemours, Inc.** and **Heraeus Holding GmbH**, represent the highest-value opportunity. These companies possess immense financial scale, which translates to enormous absolute dollar values of hedging volume [[5,6]]. They are accustomed to working with global financial institutions and have the internal resources to evaluate complex financial products. The recommended sales approach for this tier should be handled by senior bankers or dedicated commodity specialists. The initial contact should be framed around a high-level discussion of global market trends and how financial innovation can help them navigate the increasing complexity of managing interconnected commodity and currency risks. The presentation should focus on the efficiency gains and risk reduction offered by an integrated hedging suite, leveraging case studies of other large multinational clients to build credibility. The goal is to move beyond a simple product pitch to become a strategic partner in their treasury management.
+-----
 
-Tier 2 prospects, such as **Ningbo Jingxin Electronic Materials Co. Ltd.** and **Changzhou Fusion New Material Co., Ltd.**, are equally critical. While their individual transaction sizes might be smaller than a multinationals, their collective importance to the Chinese industrial ecosystem is profound. As key suppliers to the global solar market, their financial health directly impacts the stability of the entire supply chain [[2,5]]. The sales approach for this tier should be more relationship-driven. The focus should be on demonstrating a deep understanding of the solar industry's specific challenges, such as the pressure to manage costs in a volatile market. The messaging should emphasize how hedging can provide a competitive advantage by allowing them to offer more stable pricing to their customers, thereby securing long-term contracts. Building trust through technical expertise and a genuine interest in their business success is paramount.
+## Implementation Guidelines
 
-Based on the available information and the established qualification score, the following companies are identified as the top hot leads for immediate sales outreach:
+To ensure Option 1 remains forward-compatible with Option 3, the following constraints apply:
 
-1.  **Ningbo Jingxin Electronic Materials Co. Ltd.**
-    *   **Sales Qualification Score:** 9/10
-    *   **Reason:** High score due to verifiable location in the Yangtze River Delta, explicit role as a key solar supply chain player, and inferred material consumption and export activity. The solar industry's intense focus on cost control makes this a highly receptive target.
-    *   **Suggested Sales Approach:** Target the head of finance or treasury department. Begin by asking insightful questions about their procurement strategy for silver powder and their exposure to currency fluctuations. Present a pre-packaged solution for hedging their primary import needs, emphasizing simplicity and cost-effectiveness. Offer a complimentary market analysis report on the solar silver supply chain as a value-add.
+### 1. Hard Agent Boundaries
 
-2.  **Changzhou Fusion New Material Co., Ltd.**
-    *   **Sales Qualification Score:** 8/10
-    *   **Reason:** High score due to its top-tier market ranking, clear location in the Yangtze River Delta, and its position as a manufacturer of a key product (photovoltaic silver paste) for the solar industry.
-    *   **Suggested Sales Approach:** Focus on the Chief Operating Officer (COO) or Head of Procurement first, as they are likely to be the ones grappling with supply chain volatility. Frame the conversation around supply chain resilience and cost predictability. Show how hedging can complement their efforts to secure reliable suppliers and stable pricing.
+Each agent folder must be **self-contained**. No agent may import code from a sibling agent directory.
 
-3.  **Guangdong Lingguang New Material Co., Ltd.**
-    *   **Sales Qualification Score:** 8/10
-    *   **Reason:** High score due to its prominence as a key player in the silver powder market and its strategic location in the Pearl River Delta export hub.
-    *   **Suggested Sales Approach:** Engage with the CFO or Treasurer. Emphasize the sophistication of the proposed solution and how it can be tailored to their specific needs. Highlight the ability to integrate the hedging program with their existing treasury systems and reporting frameworks.
+```
+# ✅ Allowed
+from agents.causality.core import run_analysis
 
-4.  **DuPont de Nemours, Inc. (China Operations)**
-    *   **Sales Qualification Score:** 8/10
-    *   **Reason:** High score due to its massive scale, global brand, and direct relevance as a producer of silver-based materials for electronics and automotive sectors.
-    *   **Suggested Sales Approach:** Direct outreach to their designated China treasury team or a regional financial institution partner they already work with. The pitch must be professional and data-driven, focusing on enterprise-level solutions that can streamline their global hedging operations and provide centralized reporting.
+# ❌ Forbidden
+from agents.materiality.utils import shared_helper  # in causality code
+```
 
-5.  **Heraeus Holding GmbH (China Operations)**
-    *   **Sales Qualification Score:** 8/10
-    *   **Reason:** Similar to DuPont, with high financial scale and a strong presence in the materials science sector relevant to the target industries.
-    *   **Suggested Sales Approach:** A formal proposal should be sent to their China finance leadership, outlining a customized framework for an integrated hedging program. Stress the benefits of a partnership that understands their complex global operations and can offer bespoke solutions.
+### 2. Dedicated Routes Per Agent
 
-By focusing on these top-tier leads and employing a tailored, informed sales strategy, the firm can effectively penetrate this high-growth market and establish itself as a trusted advisor for some of China's most critical industrial players.
+Each agent must be accessible via its own dedicated route. The workflow orchestrator calls agents via their route, not via direct in-process function calls.
+
+```
+POST /agents/causality
+POST /agents/materiality
+POST /agents/market_trends
+POST /workflow/run
+```
+
+This ensures that when we extract an agent to its own repo, the interface contract is already defined and tested.
+
+### 3. Independent Dependency Declaration
+
+Each agent folder must contain its own `requirements.txt` (or equivalent). The root `requirements.txt` aggregates them but agents must not rely on this.
+
+```
+src/agents/causality/requirements.txt
+src/agents/materiality/requirements.txt
+src/agents/market_trends/requirements.txt
+```
+
+### 4. No Cross-Agent Shared State
+
+Agents must not share in-memory state, caches, or global variables. Any shared infrastructure (e.g. Redis, Azure AI Search) must be accessed independently by each agent through its own client instance.
+
+### 5. Independent Testability
+
+Each agent must have a standalone test suite that can be run in isolation without the rest of the repo:
+
+```bash
+pytest src/agents/causality/tests/
+pytest src/agents/materiality/tests/
+pytest src/agents/market_trends/tests/
+```
+
+-----
+
+## Migration Path to Option 3
+
+When the time comes to move to Option 3, the extraction process per agent should be straightforward:
+
+1. Copy `src/agents/<agent_name>/` to a new repository
+1. Promote its `requirements.txt` to root level
+1. Point the CI/CD pipeline at the new repo
+1. Update the workflow orchestrator to call the new endpoint URL
+1. Decommission the agent from the monorepo
+
+Because the agents are designed with hard boundaries from day one, this should be close to a copy-paste operation with minimal refactoring.
+
+-----
+
+## Risks & Mitigations
+
+|Risk                                   |Likelihood|Mitigation                                           |
+|---------------------------------------|----------|-----------------------------------------------------|
+|Developer accidentally couples agents  |Medium    |Code review policy + linting rules                   |
+|Dependency version drift between agents|Low       |Per-agent requirements files                         |
+|Single webapp becomes a bottleneck     |Low       |Azure Web App scaling handles this; revisit if needed|
+|Team forgets Option 3 is the target    |Medium    |This ADR to be referenced in onboarding docs         |
+
+-----
+
+## Stakeholders
+
+|Name                  |Role          |Position                                                                      |
+|----------------------|--------------|------------------------------------------------------------------------------|
+|Kevin W.              |Author        |Proposed Option 1 as pragmatic fallback                                       |
+|Julien C.             |Architect     |Advocated for agent autonomy; aligned on Option 1 with guidelines             |
+|Roel F.               |Infrastructure|Flagged Option 2 complexity; aligned on Option 1                              |
+|Alex / Nolan / Francis|Team          |Raised QA and version control concerns; Option 2 rejected based on their input|
+
+-----
+
+*This ADR supersedes informal discussion. Option 3 remains the intended long-term target and should be revisited once the agents are stable in production.*
